@@ -1,0 +1,102 @@
+# version: '3.8'
+
+services:
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ai-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - open-webui
+      - api
+    restart: unless-stopped
+    networks:
+      - ai-network
+
+
+  # Open WebUI
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ai-webui
+    ports:
+      - "8080:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      # - OLLAMA_BASE_URL=http://localhost:11434
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+      - SCRF_TRUSTED_ORIGINS=http://localhost,http://ai-assistant.company.local
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=user
+      - ENABLE_ADMIN_EXPORT=true
+      - PDF_EXTRACT_IMAGES=true
+    restart: unless-stopped
+    networks:
+      - ai-network
+
+  # FastAPI Backend
+  api:
+    build: ./api
+    container_name: ai-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+      - shared-data:/app/data
+    environment:
+      - OLLAMA_HOST=http://localhost:11434
+      - CHROMA_HOST=chromadb
+      - REDIS_HOST=redis
+      - DATABASE_URL=${DATABASE_URL}
+      - ORACLE_DSN=${ORACLE_DSN}
+    depends_on:
+      - chromadb
+      - redis
+    restart: unless-stopped
+    networks:
+      - ai-network
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ai-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: unless-stopped
+    networks:
+      - ai-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - ai-network
+
+volumes:
+  open-webui-data:
+  chroma-data:
+  redis-data:
+  shared-data:
+
+networks:
+  ai-network:
+    driver: bridge

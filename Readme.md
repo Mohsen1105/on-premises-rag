@@ -16,5 +16,24 @@
         extra_hosts:
             - "host.docker.internal:host-gateway"  # This helps with host resolution
 
+<!-- Quick Start Commands -->
+<!-- For CPU-only systems (like macOS): -->
+bashdocker-compose up -d
+<!-- For systems with NVIDIA GPU: -->
+bashdocker-compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+<!-- Or use the smart script: -->
+./start-ai-assistant.sh
 
-docker-compose up -d
+
+# Test Ollama API
+curl http://localhost:11434/api/tags
+
+# Test from inside Open WebUI container
+docker exec ai-webui curl http://ollama:11434/api/tags
+
+# Check logs
+docker-compose logs -f ollama
+docker-compose logs -f open-webui
+
+
+

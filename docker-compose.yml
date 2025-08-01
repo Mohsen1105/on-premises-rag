@@ -1,6 +1,23 @@
-# version: '3.8'
+version: '3.8'
 
 services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_KEEP_ALIVE=30m
+    restart: unless-stopped
+    networks:
+      - ai-network
+    # GPU configuration moved to override file
+
   # Reverse Proxy
   nginx:
     image: nginx:alpine
@@ -18,7 +35,6 @@ services:
     networks:
       - ai-network
 
-
   # Open WebUI
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -28,14 +44,15 @@ services:
     volumes:
       - open-webui-data:/app/backend/data
     environment:
-      # - OLLAMA_BASE_URL=http://localhost:11434
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
       - SCRF_TRUSTED_ORIGINS=http://localhost,http://ai-assistant.company.local
       - ENABLE_SIGNUP=true
       - DEFAULT_USER_ROLE=user
       - ENABLE_ADMIN_EXPORT=true
       - PDF_EXTRACT_IMAGES=true
+    depends_on:
+      - ollama
     restart: unless-stopped
     networks:
       - ai-network
@@ -50,12 +67,13 @@ services:
       - ./api:/app
       - shared-data:/app/data
     environment:
-      - OLLAMA_HOST=http://localhost:11434
+      - OLLAMA_HOST=http://ollama:11434
       - CHROMA_HOST=chromadb
       - REDIS_HOST=redis
       - DATABASE_URL=${DATABASE_URL}
       - ORACLE_DSN=${ORACLE_DSN}
     depends_on:
+      - ollama
       - chromadb
       - redis
     restart: unless-stopped
@@ -92,6 +110,7 @@ services:
       - ai-network
 
 volumes:
+  ollama-data:
   open-webui-data:
   chroma-data:
   redis-data:

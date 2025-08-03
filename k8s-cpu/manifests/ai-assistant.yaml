@@ -1,0 +1,376 @@
+# k8s-simple/manifests/ai-assistant.yaml
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-assistant
+---
+# Ollama StatefulSet (CPU-only)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama
+  namespace: ai-assistant
+spec:
+  serviceName: ollama-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0"
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+        volumeMounts:
+        - name: ollama-data
+          mountPath: /root/.ollama
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 30
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: ollama-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+---
+# Ollama Headless Service (for StatefulSet)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-headless
+  namespace: ai-assistant
+spec:
+  clusterIP: None
+  selector:
+    app: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+---
+# Ollama LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: ai-assistant
+spec:
+  selector:
+    app: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+  sessionAffinity: ClientIP
+---
+# ChromaDB StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chromadb
+  namespace: ai-assistant
+spec:
+  serviceName: chromadb-headless
+  replicas: 1  # ChromaDB doesn't support clustering, keep at 1
+  selector:
+    matchLabels:
+      app: chromadb
+  template:
+    metadata:
+      labels:
+        app: chromadb
+    spec:
+      containers:
+      - name: chromadb
+        image: chromadb/chroma:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: IS_PERSISTENT
+          value: "TRUE"
+        - name: PERSIST_DIRECTORY
+          value: "/chroma/chroma"
+        - name: ANONYMIZED_TELEMETRY
+          value: "FALSE"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+        volumeMounts:
+        - name: chroma-data
+          mountPath: /chroma
+        readinessProbe:
+          httpGet:
+            path: /api/v1
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/v1
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: chroma-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+---
+# ChromaDB Headless Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromadb-headless
+  namespace: ai-assistant
+spec:
+  clusterIP: None
+  selector:
+    app: chromadb
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+# ChromaDB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromadb
+  namespace: ai-assistant
+spec:
+  selector:
+    app: chromadb
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+# Open WebUI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: ai-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      containers:
+      - name: open-webui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama:11434"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: webui-data
+          mountPath: /app/backend/data
+      volumes:
+      - name: webui-data
+        persistentVolumeClaim:
+          claimName: webui-pvc
+---
+# PVC for Open WebUI (Deployment needs explicit PVC)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webui-pvc
+  namespace: ai-assistant
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Open WebUI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui
+  namespace: ai-assistant
+spec:
+  selector:
+    app: open-webui
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ai-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--appendonly", "yes"]
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: ai-assistant
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+# API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: ai-assistant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: your-registry/ai-api:latest  # UPDATE THIS
+        ports:
+        - containerPort: 8000
+        env:
+        - name: OLLAMA_HOST
+          value: "http://ollama:11434"
+        - name: CHROMA_HOST
+          value: "chromadb"
+        - name: REDIS_HOST
+          value: "redis"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: api-data
+          mountPath: /app/data
+      volumes:
+      - name: api-data
+        emptyDir: {}
+---
+# API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: ai-assistant
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8000
+    targetPort: 8000
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-assistant
+  namespace: ai-assistant
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+spec:
+  rules:
+  - host: ai.company.local  # UPDATE THIS
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: open-webui
+            port:
+              number: 8080
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api
+            port:
+              number: 8000

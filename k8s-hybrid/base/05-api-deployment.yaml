@@ -1,0 +1,98 @@
+# k8s-hybrid/base/05-api-deployment.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: ai-assistant
+data:
+  model_routing.py: |
+    # Model routing configuration
+    MODEL_ROUTING = {
+        # Large models -> GPU
+        "llama3.2:latest": {"prefer": "gpu", "fallback": "cpu"},
+        "mistral:7b-instruct": {"prefer": "gpu", "fallback": "cpu"},
+        "codellama:7b": {"prefer": "gpu", "fallback": "cpu"},
+        
+        # Small models -> CPU
+        "phi3:mini": {"prefer": "cpu", "fallback": "gpu"},
+        "llama3.2:1b": {"prefer": "cpu", "fallback": "gpu"},
+        "llama3.2:3b-instruct-q4_0": {"prefer": "cpu", "fallback": "gpu"},
+        
+        # Default
+        "default": {"prefer": "hybrid", "fallback": "any"}
+    }
+    
+    def get_ollama_endpoint(model: str, node_type: str = None):
+        """Return appropriate Ollama endpoint based on model and preference"""
+        
+        if node_type:
+            if node_type == "gpu":
+                return "http://ollama-gpu-service:11434"
+            elif node_type == "cpu":
+                return "http://ollama-cpu-service:11434"
+        
+        # Use smart load balancer by default
+        return "http://smart-lb-service:11434"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: ai-assistant
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      serviceAccountName: ai-assistant-sa
+      containers:
+      - name: api
+        image: your-registry/ai-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: OLLAMA_HOST
+          value: "http://smart-lb-service:11434"
+        - name: ENABLE_MODEL_ROUTING
+          value: "true"
+        - name: CHROMA_HOST
+          value: "chromadb-service"
+        - name: REDIS_HOST
+          value: "redis-service"
+        volumeMounts:
+        - name: api-config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: api-config
+        configMap:
+          name: api-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: ai-assistant
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8000
+    targetPort: 8000

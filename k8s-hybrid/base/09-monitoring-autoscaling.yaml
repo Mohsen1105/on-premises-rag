@@ -1,0 +1,64 @@
+# k8s-hybrid/base/09-monitoring-autoscaling.yaml
+# ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-assistant-monitor
+  namespace: ai-assistant
+spec:
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+  - port: metrics
+    interval: 30s
+---
+# HPA for API
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+  namespace: ai-assistant
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# VPA for Ollama
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ollama-vpa
+  namespace: ai-assistant
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: ollama-gpu
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: ollama
+      minAllowed:
+        cpu: 2
+        memory: 8Gi
+      maxAllowed:
+        cpu: 16
+        memory: 32Gi

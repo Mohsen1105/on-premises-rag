@@ -1,19 +1,23 @@
 #!/bin/bash
 # scripts/manage_models.sh
 
-# Pull recommended models for oil & gas use case
-# ollama pull llama3.2:latest          # General purpose, 3B parameters
-# ollama pull mistral:7b-instruct      # Good for technical content
-# ollama pull codellama:7b             # For code/script generation
-# ollama pull phi3:medium              # Microsoft's model, good for documents
-ollama pull llama2:7b 
-ollama pull mistral:7b 
+# Pull OpenAI open-source models for oil & gas use case
+echo "Pulling OpenAI gpt-oss:20b model..."
+docker exec ollama ollama pull gpt-oss:20b
 
-# Optional: Pull embedding model
-ollama pull nomic-embed-text         # For document embeddings
+# Keep phi3:mini for quick responses
+echo "Pulling phi3:mini for quick responses..."
+docker exec ollama ollama pull phi3:mini
+
+# Keep llama3.2:3b for quick responses
+echo "Pulling llama3.2:3b for quick responses..."
+docker exec ollama ollama pull llama3.2:3b
+
+# Optional: Pull embedding model if needed
+# docker exec ollama ollama pull nomic-embed-text
 
 echo "Models pulled successfully!"
 
 # List all available models
 echo "Available models:"
-ollama list
+docker exec ollama ollama list

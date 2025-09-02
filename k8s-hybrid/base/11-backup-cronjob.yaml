@@ -1,0 +1,38 @@
+# k8s-hybrid/base/11-backup-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ai-backup
+  namespace: ai-assistant
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              # Backup PVCs
+              for pvc in chromadb-pvc redis-pvc webui-pvc; do
+                kubectl -n ai-assistant exec -it $(kubectl -n ai-assistant get pod -l app=${pvc%-pvc} -o name | head -1 | cut -d/ -f2) -- \
+                  tar czf /tmp/${pvc}-backup-$(date +%Y%m%d).tar.gz /data /chroma /app/backend/data 2>/dev/null || true
+              done
+              
+              # Backup configurations
+              kubectl -n ai-assistant get configmap -o yaml > /backup/configmaps-$(date +%Y%m%d).yaml
+              kubectl -n ai-assistant get secret -o yaml > /backup/secrets-$(date +%Y%m%d).yaml
+              
+              echo "Backup completed: $(date)"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc

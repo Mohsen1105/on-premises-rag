@@ -1,0 +1,120 @@
+# k8s-hybrid/base/04-smart-loadbalancer.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-lb-config
+  namespace: ai-assistant
+data:
+  haproxy.cfg: |
+    global
+        maxconn 4096
+        log stdout local0
+        
+    defaults
+        mode http
+        timeout connect 300s
+        timeout client 300s
+        timeout server 300s
+        option httplog
+        
+    frontend ollama_frontend
+        bind *:11434
+        
+        # Route based on model in the request
+        acl is_large_model path_sub -i llama3.2:latest mistral codellama
+        acl is_small_model path_sub -i phi3 llama3.2:1b llama3.2:3b gemma
+        
+        # Check for available GPU backends
+        acl gpu_available nbsrv(ollama_gpu_backend) gt 0
+        
+        # Routing logic
+        use_backend ollama_gpu_backend if is_large_model gpu_available
+        use_backend ollama_cpu_backend if is_small_model
+        default_backend ollama_hybrid_backend
+        
+    backend ollama_gpu_backend
+        balance leastconn
+        option httpchk GET /api/tags
+        server-template ollama-gpu 3 ollama-gpu-service:11434 check resolvers kubernetes resolve-prefer ipv4
+        
+    backend ollama_cpu_backend
+        balance leastconn
+        option httpchk GET /api/tags
+        server-template ollama-cpu 10 ollama-cpu-service:11434 check resolvers kubernetes resolve-prefer ipv4
+        
+    backend ollama_hybrid_backend
+        balance leastconn
+        option httpchk GET /api/tags
+        server-template ollama-all 20 ollama-service:11434 check resolvers kubernetes resolve-prefer ipv4
+        
+    resolvers kubernetes
+        nameserver dns1 kube-dns.kube-system.svc.cluster.local:53
+        resolve_retries 3
+        timeout resolve 1s
+        timeout retry 1s
+        hold other 30s
+        hold refused 30s
+        hold nx 30s
+        hold timeout 30s
+        hold valid 10s
+        hold obsolete 30s
+        
+    stats enable
+    stats uri /stats
+    stats refresh 30s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-loadbalancer
+  namespace: ai-assistant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smart-loadbalancer
+  template:
+    metadata:
+      labels:
+        app: smart-loadbalancer
+    spec:
+      containers:
+      - name: haproxy
+        image: haproxy:2.8-alpine
+        ports:
+        - containerPort: 11434
+          name: ollama
+        - containerPort: 8404
+          name: stats
+        volumeMounts:
+        - name: config
+          mountPath: /usr/local/etc/haproxy/haproxy.cfg
+          subPath: haproxy.cfg
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: config
+        configMap:
+          name: smart-lb-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-lb-service
+  namespace: ai-assistant
+spec:
+  selector:
+    app: smart-loadbalancer
+  ports:
+  - name: ollama
+    port: 11434
+    targetPort: 11434
+  - name: stats
+    port: 8404
+    targetPort: 8404
+  type: ClusterIP

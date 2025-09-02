@@ -1,0 +1,30 @@
+# k8s-hybrid/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-assistant
+
+resources:
+  - 00-namespace.yaml
+  - 01-rbac.yaml
+  - 02-node-detector-configmap.yaml
+  - 03-ollama-hybrid-deployment.yaml
+  - 04-smart-loadbalancer.yaml
+  - 05-api-deployment.yaml
+  - 06-openwebui-deployment.yaml
+  - 07-support-services.yaml
+  - 08-storage.yaml
+  - 09-monitoring-autoscaling.yaml
+  - 10-ingress.yaml
+
+configMapGenerator:
+  - name: deployment-info
+    literals:
+      - deployment-type=hybrid
+      - version=1.0.0
+
+secretGenerator:
+  - name: ai-secrets
+    literals:
+      - webui-secret-key=change-this-secret-key
+      - database-url=your-database-connection-string

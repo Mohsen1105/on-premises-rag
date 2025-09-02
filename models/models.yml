@@ -1,31 +1,34 @@
 # config/models.yml
 models:
   general_purpose:
-    name: "llama3.2:latest"
-    memory_requirement: 3.5  # GB
+    name: "gpt-oss:20b"
+    memory_requirement: 16.0  # GB
     context_length: 4096
     use_cases:
       - "General queries"
       - "Document summarization"
       - "Email drafting"
+      - "Reasoning tasks"
   
   technical:
-    name: "mistral:7b-instruct"
-    memory_requirement: 5.0  # GB
+    name: "gpt-oss:20b"
+    memory_requirement: 16.0  # GB
     context_length: 8192
     use_cases:
       - "Technical documentation analysis"
       - "Operational report analysis"
       - "Engineering queries"
+      - "Complex reasoning"
   
   code_generation:
-    name: "codellama:7b"
-    memory_requirement: 5.0  # GB
+    name: "gpt-oss:20b"
+    memory_requirement: 16.0  # GB
     context_length: 16384
     use_cases:
       - "SQL query generation"
       - "Python script creation"
       - "Data analysis code"
+      - "Function calling"
   
   small_fast:
     name: "phi3:mini"

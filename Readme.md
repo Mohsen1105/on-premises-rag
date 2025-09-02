@@ -18,3 +18,24 @@
 
 
 docker-compose up -d
+
+# Open-web ui
+user : mohsen110561@gmail.com
+pass : 12345678
+
+# n8n 
+Email : mohsen110561@gmail.com
+User : Moaiedipour
+pass : M12345678
+
+# n8n / postgres
+Host : postgres
+Database : n8n
+User : root
+pass : 123
+
+# download models inside the ollama
+docker exec ollama ollama pull gpt-oss:20b
+
+# Check if Ollama API is accessible and returns models
+curl -s http://localhost:11434/api/tags | jq .

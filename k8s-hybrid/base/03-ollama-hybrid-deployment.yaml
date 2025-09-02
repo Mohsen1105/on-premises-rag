@@ -1,0 +1,236 @@
+# k8s-hybrid/base/03-ollama-hybrid-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-gpu-service
+  namespace: ai-assistant
+  labels:
+    component: ollama
+    tier: gpu
+spec:
+  clusterIP: None
+  selector:
+    app: ollama-gpu
+  ports:
+  - port: 11434
+    targetPort: 11434
+    name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-cpu-service
+  namespace: ai-assistant
+  labels:
+    component: ollama
+    tier: cpu
+spec:
+  clusterIP: None
+  selector:
+    app: ollama-cpu
+  ports:
+  - port: 11434
+    targetPort: 11434
+    name: http
+---
+# Unified service that load balances across all Ollama instances
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: ai-assistant
+spec:
+  selector:
+    component: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+    name: http
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+---
+# GPU Ollama StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama-gpu
+  namespace: ai-assistant
+spec:
+  serviceName: ollama-gpu-service
+  replicas: 3  # Will be auto-adjusted based on GPU nodes
+  selector:
+    matchLabels:
+      app: ollama-gpu
+      component: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama-gpu
+        component: ollama
+        tier: gpu
+    spec:
+      serviceAccountName: ai-assistant-sa
+      nodeSelector:
+        ai-assistant/gpu-available: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      initContainers:
+      - name: model-loader
+        image: ollama/ollama:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Loading GPU-optimized models..."
+          ollama serve &
+          sleep 10
+          ollama pull llama3.2:latest
+          ollama pull mistral:7b-instruct
+          ollama pull codellama:7b
+          pkill ollama
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+          name: http
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0"
+        - name: OLLAMA_NUM_PARALLEL
+          value: "4"
+        - name: OLLAMA_MAX_LOADED_MODELS
+          value: "2"
+        - name: OLLAMA_KEEP_ALIVE
+          value: "30m"
+        - name: NODE_TYPE
+          value: "gpu"
+        resources:
+          requests:
+            memory: "16Gi"
+            cpu: "4"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "24Gi"
+            cpu: "8"
+            nvidia.com/gpu: 1
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "ollama list | grep -q llama3.2"
+          initialDelaySeconds: 60
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: ollama-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 100Gi
+---
+# CPU Ollama DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ollama-cpu
+  namespace: ai-assistant
+spec:
+  selector:
+    matchLabels:
+      app: ollama-cpu
+      component: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama-cpu
+        component: ollama
+        tier: cpu
+    spec:
+      serviceAccountName: ai-assistant-sa
+      nodeSelector:
+        ai-assistant/gpu-available: "false"
+      initContainers:
+      - name: model-loader
+        image: ollama/ollama:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Loading CPU-optimized models..."
+          ollama serve &
+          sleep 10
+          ollama pull phi3:mini
+          ollama pull llama3.2:1b
+          ollama pull llama3.2:3b-instruct-q4_0
+          pkill ollama
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+          name: http
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0"
+        - name: OLLAMA_NUM_PARALLEL
+          value: "2"
+        - name: OLLAMA_MAX_LOADED_MODELS
+          value: "1"
+        - name: OLLAMA_KEEP_ALIVE
+          value: "5m"
+        - name: NODE_TYPE
+          value: "cpu"
+        - name: OMP_NUM_THREADS
+          valueFrom:
+            resourceFieldRef:
+              resource: requests.cpu
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "ollama list | grep -q phi3"
+          initialDelaySeconds: 90
+          periodSeconds: 10
+      volumes:
+      - name: ollama-storage
+        hostPath:
+          path: /var/lib/ollama
+          type: DirectoryOrCreate

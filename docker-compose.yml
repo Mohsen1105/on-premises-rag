@@ -35,6 +35,10 @@ services:
       - DEFAULT_USER_ROLE=user
       - ENABLE_ADMIN_EXPORT=true
       - PDF_EXTRACT_IMAGES=true
+      # Supabase Vector Store Configuration (for RAG features)
+      - SUPABASE_HOST=${SUPABASE_HOST}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
     restart: unless-stopped
     networks:
       - ai-network
@@ -49,14 +53,24 @@ services:
       - ./api:/app
       - shared-data:/app/data
     environment:
-      - OLLAMA_HOST=http://localhost:11434
+      - OLLAMA_HOST=http://ollama:11434
       - CHROMA_HOST=chromadb
       - REDIS_HOST=redis
       - DATABASE_URL=${DATABASE_URL}
       - ORACLE_DSN=${ORACLE_DSN}
+      # Supabase Vector Store Configuration
+      - SUPABASE_HOST=${SUPABASE_HOST}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      # PostgreSQL Configuration
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
       - chromadb
       - redis
+      - postgres
     restart: unless-stopped
     networks:
       - ai-network
@@ -90,10 +104,11 @@ services:
     networks:
       - ai-network
 
-  # postgres Database 
+  # postgres Database with pgvector for Supabase-compatible vector storage
   postgres:
-    image: postgres:16-alpine
-    networks: 
+    image: pgvector/pgvector:pg16
+    platform: linux/amd64
+    networks:
       - ai-network
     restart: unless-stopped
     ports:
@@ -104,6 +119,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_storage:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 5s
@@ -151,11 +167,15 @@ services:
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Supabase Vector Store Configuration
+      - SUPABASE_HOST=${SUPABASE_HOST}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
     depends_on:
       postgres:
         condition: service_healthy

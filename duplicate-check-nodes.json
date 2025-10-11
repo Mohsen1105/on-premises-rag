@@ -1,0 +1,149 @@
+{
+  "nodes_to_add": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) as file_count,\n  '{{ $json.fileName }}' as fileName\nFROM vectors.documents\nWHERE metadata->>'fileName' = '{{ $json.fileName }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [240, 1024],
+      "id": "check-file-exists-node",
+      "name": "CheckFileExists",
+      "credentials": {
+        "postgres": {
+          "id": "WLjj697DqG9UQ6nZ",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the file count from PostgreSQL query\nconst fileCount = parseInt($input.first().json.file_count) || 0;\n\n// Get fileName from the query result\nconst fileName = $input.first().json.fileName;\n\n// Get fileId from Loop Over Items node\nconst loopData = $('Loop Over Items').item.json;\nconst fileId = loopData.fileId;\n\n// Determine if file exists\nconst fileExists = fileCount > 0;\n\n// Log the result\nif (fileExists) {\n  console.log(`⚠️ File already exists: ${fileName} (Skipping)`);\n} else {\n  console.log(`✅ New file detected: ${fileName} (Processing)`);\n}\n\nreturn {\n  json: {\n    fileName: fileName,\n    fileId: fileId,\n    fileExists: fileExists,\n    fileCount: fileCount,\n    shouldProcess: !fileExists,\n    status: fileExists ? 'skipped' : 'processing'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, 1024],
+      "id": "process-check-result-node",
+      "name": "ProcessCheckResult"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.shouldProcess }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [656, 1024],
+      "id": "should-process-file-node",
+      "name": "ShouldProcessFile"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ingestion Summary - Shows statistics after loop completes\nconst allItems = $input.all();\n\nconst processed = allItems.filter(i => i.json.status === 'processing').length;\nconst skipped = allItems.filter(i => i.json.status === 'skipped').length;\nconst total = allItems.length;\n\nconsole.log(`\n═══════════════════════════════════\n  Ingestion Complete\n═══════════════════════════════════\n  ✅ Processed: ${processed}\n  ⏭️  Skipped:   ${skipped}\n  📊 Total:     ${total}\n═══════════════════════════════════\n`);\n\nreturn {\n  json: {\n    summary: {\n      processed,\n      skipped,\n      total,\n      timestamp: new Date().toISOString()\n    },\n    details: allItems\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [112, 800],
+      "id": "ingestion-summary-node",
+      "name": "IngestionSummary"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add metadata to documents before storing\nconst items = $input.all();\nconst loopData = $('Loop Over Items').item.json;\n\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    metadata: {\n      ...item.json.metadata,\n      fileName: loopData.fileName,\n      fileId: loopData.fileId,\n      ingestedAt: new Date().toISOString(),\n      source: 'wikimahdaviat.ir'\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1872, 1008],
+      "id": "add-metadata-node",
+      "name": "AddMetadata"
+    }
+  ],
+  "connection_changes": {
+    "description": "Update these connections in your workflow",
+    "remove": [
+      {
+        "from": "Loop Over Items",
+        "to": "GetContentOfOne",
+        "note": "Remove direct connection"
+      }
+    ],
+    "add": [
+      {
+        "from": "Loop Over Items",
+        "output": "main",
+        "outputIndex": 1,
+        "to": "CheckFileExists",
+        "input": "main",
+        "inputIndex": 0
+      },
+      {
+        "from": "CheckFileExists",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "ProcessCheckResult",
+        "input": "main",
+        "inputIndex": 0
+      },
+      {
+        "from": "ProcessCheckResult",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "ShouldProcessFile",
+        "input": "main",
+        "inputIndex": 0
+      },
+      {
+        "from": "ShouldProcessFile",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "GetContentOfOne",
+        "input": "main",
+        "inputIndex": 0,
+        "note": "True branch - process file"
+      },
+      {
+        "from": "ShouldProcessFile",
+        "output": "main",
+        "outputIndex": 1,
+        "to": "Loop Over Items",
+        "input": "main",
+        "inputIndex": 0,
+        "note": "False branch - skip and continue loop"
+      },
+      {
+        "from": "Loop Over Items",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "IngestionSummary",
+        "input": "main",
+        "inputIndex": 0,
+        "note": "When loop completes - show summary"
+      },
+      {
+        "from": "ConcatenateChunk_UsingSeparator",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "AddMetadata",
+        "input": "main",
+        "inputIndex": 0,
+        "note": "Add metadata before storing"
+      },
+      {
+        "from": "AddMetadata",
+        "output": "main",
+        "outputIndex": 0,
+        "to": "Postgres PGVector Store",
+        "input": "main",
+        "inputIndex": 0
+      }
+    ]
+  }
+}

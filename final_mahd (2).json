@@ -1,0 +1,958 @@
+{
+  "name": "final_mahd",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1AF3kniELVGUWgygqB7Fhc0hO10NZswTS",
+          "mode": "list",
+          "cachedResultName": " روز ظهور_ویکی_مهدویت.docx",
+          "cachedResultUrl": "https://docs.google.com/document/d/1AF3kniELVGUWgygqB7Fhc0hO10NZswTS/edit?usp=drivesdk&ouid=101011113754827356976&rtpof=true&sd=true"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        240
+      ],
+      "id": "7bee038c-fe6f-403e-83e1-764bfa779295",
+      "name": "Download File"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        240
+      ],
+      "id": "f409121a-fbb0-4d9b-8905-82e59d106795",
+      "name": "Supabase Vector Store"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        752,
+        384
+      ],
+      "id": "8dd9cf22-4589-4f7d-8288-bc541b1ca860",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        928,
+        576
+      ],
+      "id": "cf2259eb-19da-4c8d-9d5a-f3319248f31d",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "content": "## Ingestion Basic Example",
+        "height": 520,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ],
+      "id": "2b57177b-f3d9-4ada-9be1-16a1b4946a5a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Retrieval",
+        "height": 648,
+        "width": 1120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        192
+      ],
+      "id": "cade5230-e50e-42a9-978a-a845886d8635",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents",
+        "toolDescription": "Work with your data in Supabase Vector Store",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 20,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.1,
+      "position": [
+        2096,
+        400
+      ],
+      "id": "06a91163-ca91-4669-b95c-8c0c00be5040",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ugA0fS0FSmHiv5e1",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        592
+      ],
+      "id": "18d34e46-2e8c-4a7a-a535-32ab984a17ff",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "4iCdULZvj9KrQQpX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Refrence \n## https://www.anthropic.com/news/contextual-retrieval\n## https://www.youtube.com/watch?v=EcTvIEoz8nk\n## Tools\n## https://platform.vectorize.io/",
+        "height": 180,
+        "width": 900,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f85a2e6f-10f7-4afe-889f-15c09473e59c",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        400
+      ],
+      "id": "ec88b81b-348f-411a-bed4-cb5515f047f0",
+      "name": "Embeddings OpenAI7"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an assistant for Mahdism documents(a concept within Shia Islam that focuses on the belief in the return of a divinely guided leader, the Mahdi, who will bring about a period of justice and peace.) .\nYou MUST use the search_mahdism_documents tool to find information before answering any questions about the context. Never rely on your general knowledge alone.\nFollow these rules:\n\nLANGUAGE PRESERVATION PROTOCOL:\n✓ DO:\n- Quote passages in their original language (Persian/Arabic/English)\n- Preserve technical terms in source language\n- Mix languages naturally when sources are mixed\n- Use the dominant document language for explanatory text\n\n✗ DON'T:\n- Translate quoted content\n- Force single-language responses when sources are multilingual\n- Lose context by separating languages\n\n\nCRITICAL RULES:\n1. ALWAYS call the search tool first for any mahdism-related question\n2. Never answer from memory - always search the documents\n3. After receiving search results, use them to formulate your answer\n4. Cite the document sources in your response\n5. Only state \"information not available\" if the search returns no relevant results\n\nINSTRUCTIONS:\n1. Response must be in Persian.\n2. Carefully read and analyze the provided document context\n3. Answer questions using information from the documents as your ONLY source\n4. DO NOT use your general knowledge about Mahdism, Shia, Islam, or any related topics to supplement answers\n5. Always indicate the basis of your answer:\n   - \"According to [Document Name]...\"\n   - \"Based on the information in [Section]...\"\n   - \"The documents show that...\"\n   - \"While not explicitly stated, the documents suggest...\"\n\n\n\nRESPONSE FORMAT:\n- Answer the question directly\n- Cite specific documents/sections when available\n- Be helpful and informative\n- Only say \"information not available\" when genuinely unable to answer from documents.\n\nYour goal is to be a USEFUL assistant while prioritizing document content.\nExample Respons: \n\"حضرت مهدی (عج) ...\". [عنوان مقاله :  ] \n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1456,
+        240
+      ],
+      "id": "635963eb-66c4-4810-9c89-b99662d5e64c",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-4-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        512
+      ],
+      "id": "d0d5b6a2-a4a6-48bd-899b-c9dc014c5cbf",
+      "name": "OpenAI Chat Model6",
+      "credentials": {
+        "openAiApi": {
+          "id": "NtG4SHt2BJDe5VLo",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        512
+      ],
+      "id": "49bdb0d6-3c1d-422e-8c6d-3e081cdac13c",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"data\": {{ JSON.stringify($json.data) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        992
+      ],
+      "id": "225061da-8984-46a1-b363-a1d51d7b63da",
+      "name": "Document Data2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<document>\n{{ $('Document Data2').item.json.data }}\n</document>\n\nHere is the chunk we want to situate within the overall document:\n\n<chunk> {{$json.chunk}}</chunk>\n\nPlease:\n- Provide a short and succinct **context** to situate this chunk within the document for improved search retrieval.\n- Return the **original chunk** exactly as provided unless a correction is necessary.\n- If the chunk contains an **incomplete number, percentage, or entity**, correct it using the full document.\n- If part of a **sentence is cut off**, reconstruct the missing words only if necessary for clarity.\n- If the chunk is part of a table, include the complete table entry to maintain data integrity\n- Do not add any additional explanations or formatting beyond the required output.\nFill in the following format:\n[succinct context] : (original chunk or corrected version if necessary]\n\nYour response should contain only the text that replaces these placeholders, without including the placeholder labels themselves."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        1376,
+        992
+      ],
+      "id": "16648d64-db83-44ff-b1cc-2f6ba627ab30",
+      "name": "Add Context1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "chunks",
+        "options": {
+          "destinationFieldName": "chunk"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        992
+      ],
+      "id": "f9aa0f24-9c76-4f89-8766-10f864a26d06",
+      "name": "Split Chunks1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        1344
+      ],
+      "id": "65422436-3cca-4c6b-a899-a400f595db70",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "4iCdULZvj9KrQQpX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chunkSize = 500;\nconst chunkOverlap = 50;\nconst data = $input.first().json.data || '';\nconst text = data.text.replace(/[\\r\\n]+/g, ' ');\n\nconst chunks = [];\nlet remainingText = text;\n\nwhile (remainingText.length > 0) {\n  let splitPoint = remainingText.lastIndexOf(\"\\n\\n\", chunkSize);\n\n  if (splitPoint === -1) {\n    splitPoint = remainingText.lastIndexOf(\". \", chunkSize);\n  }\n\n  if (splitPoint === -1) {\n    splitPoint = remainingText.lastIndexOf(\" \", chunkSize);\n  }\n\n  if (splitPoint === -1 || splitPoint < chunkSize * 0.5) {\n    splitPoint = chunkSize;\n  }\n\n  let chunk = remainingText.substring(0, splitPoint).trim();\n  chunks.push(chunk);\n\n  remainingText = remainingText\n    .substring(Math.max(0, splitPoint - chunkOverlap))\n    .trim();\n\n  if (remainingText.length < chunkSize * 0.2) {\n    chunks.push(remainingText);\n    break;\n  }\n}\n\nreturn { chunks };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        992
+      ],
+      "id": "126eaa83-31fa-4324-baae-1123165f010d",
+      "name": "Recursive Splitter1"
+    },
+    {
+      "parameters": {
+        "separator": "###SPLIT###",
+        "chunkSize": 500,
+        "chunkOverlap": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        1344
+      ],
+      "id": "a2fa4049-6e50-48d5-85cb-b68dc8163fde",
+      "name": "Character Text Splitter1"
+    },
+    {
+      "parameters": {
+        "content": "## Ingestion Contextual Hybrid",
+        "height": 952,
+        "width": 3332,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        928
+      ],
+      "id": "21eaca6e-1359-49b3-bd63-6928252127b2",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        1216
+      ],
+      "id": "f05d7464-aed3-4018-891e-edfe293b0200",
+      "name": "Default Data Loader3"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1904,
+        1296
+      ],
+      "id": "3da6839a-f23f-462c-97a0-71b5b1704c81",
+      "name": "Embeddings OpenAI4",
+      "credentials": {
+        "openAiApi": {
+          "id": "4iCdULZvj9KrQQpX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.1,
+      "position": [
+        2528,
+        1136
+      ],
+      "id": "2c9152c4-4942-4d60-96c8-98cc23b608a4",
+      "name": "Supabase Vector Store4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ugA0fS0FSmHiv5e1",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        1056
+      ],
+      "id": "eeb55d11-d9d4-4449-ad8b-59b8b3349450",
+      "name": "When clicking ‘Execute workflow’",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        1056
+      ],
+      "id": "dcfc4bae-08ba-4f80-80a0-cf3b73ed8699",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Assuming the API returns: { files: [{id: 1, name: \"file1\"}, {id: 2, name: \"file2\"}] }\nconst files = $input.first().json.data; // Adjust based on your API response structure\nlet id = 0;  \nreturn files.map(file => ({\n  json: {\n    fileId: ++id,\n    fileName: file.file_name\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        1056
+      ],
+      "id": "c16d4791-dd1b-4694-ba41-de2ad01510a6",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "url": "https://wikimahdaviat.ir/api/fa/wiki/get/allItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        1056
+      ],
+      "id": "94864658-b14b-4016-a2c5-c30ece98c8d6",
+      "name": "GetAllItems"
+    },
+    {
+      "parameters": {
+        "url": "=https://wikimahdaviat.ir/api/fa/wiki/get/{{ $json.fileName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        992
+      ],
+      "id": "2e9769d7-375a-442a-b70a-7df4e8a798c9",
+      "name": "GetContentOfOne"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "text",
+              "separateBy": "other",
+              "customSeparator": "###SPLIT###"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        992
+      ],
+      "id": "15c607ae-4a9d-42e7-b77c-69224a78ce83",
+      "name": "ConcatenateChunk_UsingSeparator"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "documents",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        2016,
+        992
+      ],
+      "id": "e03d8f45-9be6-49a6-8de6-8a9880751bf0",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "WLjj697DqG9UQ6nZ",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        240
+      ],
+      "id": "7a3ef162-63d6-4fcc-a129-7a21ee25b345",
+      "name": "When chat message received",
+      "webhookId": "caf4bdf0-5832-4178-8bdd-70013d1c168c"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) as file_count,\n  '{{ $json.fileName }}' as fileName\nFROM vectors.documents\nWHERE metadata->>'fileName' = '{{ $json.fileName }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -32,
+        1008
+      ],
+      "id": "90a1e5e1-2e0f-46d8-a0dd-4f0c7f507dcb",
+      "name": "CheckFileExists",
+      "credentials": {
+        "postgres": {
+          "id": "WLjj697DqG9UQ6nZ",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the file count from PostgreSQL query\nconst fileCount = parseInt($input.first().json.file_count) || 0;\n\n// Get fileName from the query result\nconst fileName = $input.first().json.fileName;\n\n// Get fileId from Loop Over Items node\nconst loopData = $('Loop Over Items').item.json;\nconst fileId = loopData.fileId;\n\n// Determine if file exists\nconst fileExists = fileCount > 0;\n\n// Log the result\nif (fileExists) {\n  console.log(`⚠️ File already exists: ${fileName} (Skipping)`);\n} else {\n  console.log(`✅ New file detected: ${fileName} (Processing)`);\n}\n\nreturn {\n  json: {\n    fileName: fileName,\n    fileId: fileId,\n    fileExists: fileExists,\n    fileCount: fileCount,\n    shouldProcess: !fileExists,\n    status: fileExists ? 'skipped' : 'processing'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        1008
+      ],
+      "id": "ea4f892b-ca69-4cd5-bfe1-7c807524e5e2",
+      "name": "ProcessCheckResult"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d7fb7787-6c71-4fc6-93be-e1cdc9a6c482",
+              "leftValue": "shouldProcess",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        1008
+      ],
+      "id": "d7de340d-57ac-411a-ab8e-9306c937bf21",
+      "name": "ShouldProcessFile"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=ALWAYS search this database for information about Mahdism documents including Shia, Islam, and details. Use this tool for ANY question about Mahdism-related content.",
+        "tableName": "documents",
+        "topK": 2,
+        "includeDocumentMetadata": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1696,
+        400
+      ],
+      "id": "7ed7963c-91df-4b90-ad06-8f7a9ad219b5",
+      "name": "search_mahism_documents",
+      "credentials": {
+        "postgres": {
+          "id": "WLjj697DqG9UQ6nZ",
+          "name": "Postgres account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "search_mahism_documents",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI7": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Data2": {
+      "main": [
+        [
+          {
+            "node": "Recursive Splitter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Add Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Splitter1": {
+      "main": [
+        [
+          {
+            "node": "Split Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Context1": {
+      "main": [
+        [
+          {
+            "node": "ConcatenateChunk_UsingSeparator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter1": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader3",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader3": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI4": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GetAllItems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "CheckFileExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store4": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetAllItems": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetContentOfOne": {
+      "main": [
+        [
+          {
+            "node": "Document Data2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Add Context1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ConcatenateChunk_UsingSeparator": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckFileExists": {
+      "main": [
+        [
+          {
+            "node": "ProcessCheckResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ProcessCheckResult": {
+      "main": [
+        [
+          {
+            "node": "ShouldProcessFile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ShouldProcessFile": {
+      "main": [
+        [
+          {
+            "node": "GetContentOfOne",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_mahism_documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9430cd1f-1cc7-4b07-ae48-b38f4feffcdb",
+  "meta": {
+    "instanceId": "85ea6175cd91d3db6ab60ec97ae56b401de69e4a7ad9df1c6eacbff3d4d18a89"
+  },
+  "id": "0vK9fGC0HhFJ1pxp",
+  "tags": []
+}

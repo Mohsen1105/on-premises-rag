@@ -3,7 +3,7 @@
 services:
   # Reverse Proxy
   nginx:
-    image: nginx:alpine
+    image: docker.arvancloud.ir/nginx:alpine
     container_name: ai-nginx
     ports:
       - "80:80"
@@ -35,6 +35,8 @@ services:
       - DEFAULT_USER_ROLE=user
       - ENABLE_ADMIN_EXPORT=true
       - PDF_EXTRACT_IMAGES=true
+    depends_on:
+      - ollama
     restart: unless-stopped
     networks:
       - ai-network
@@ -57,13 +59,14 @@ services:
     depends_on:
       - chromadb
       - redis
+      - ollama
     restart: unless-stopped
     networks:
       - ai-network
 
   # ChromaDB Vector Database
   chromadb:
-    image: chromadb/chroma:latest
+    image: docker.arvancloud.ir/chromadb/chroma:latest
     container_name: ai-chromadb
     ports:
       - "8001:8000"
@@ -79,7 +82,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: docker.arvancloud.ir/redis:7-alpine
     container_name: ai-redis
     ports:
       - "6379:6379"
@@ -112,8 +115,8 @@ services:
 
   # Ollama LLM Server
   ollama:
-    image: ollama/ollama:0.11.1
-    container_name: ollama
+    image: docker.arvancloud.ir/ollama/ollama:latest
+    container_name: ai-ollama
     restart: unless-stopped
     volumes:
       - ollama_models:/root/.ollama
@@ -121,8 +124,12 @@ services:
       - "11434:11434"
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     networks:
       - ai-network
+    runtime: nvidia 
     # GPU configuration - comment out if no NVIDIA GPU available
     # deploy:
     #   resources:
@@ -131,16 +138,16 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 60s
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # n8n Workflow Automation
   n8n:
-    image: n8nio/n8n
+    image: docker.arvancloud.ir/n8nio/n8n
     container_name: ai-n8n
     restart: unless-stopped
     ports:

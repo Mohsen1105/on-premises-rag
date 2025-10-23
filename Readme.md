@@ -39,3 +39,13 @@ docker exec ollama ollama pull gpt-oss:20b
 
 c # Check if Ollama API is accessible and returns models
 curl -s http://localhost:11434/api/tags | jq .
+
+
+
+
+# neo4j
+docker exec ai-neo4j cypher-shell -u neo4j -p Mohsen1105$ "RETURN 'Neo4j is ready!' as message"
+username: neo4j
+pass: Mohsen1105$
+
+http://localhost:7474/browser/

@@ -127,23 +127,66 @@ services:
       - OLLAMA_ORIGINS=*
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_NUM_PARALLEL=4           # Allow multiple parallel requests
+      - OLLAMA_MAX_LOADED_MODELS=2      # Keep multiple models in memory
+      - OLLAMA_FLASH_ATTENTION=true     # Enable flash attention for better performance
+      - OLLAMA_NUM_GPU=1                # Explicitly set GPU count
+      - OLLAMA_GPU_OVERHEAD=0           # Minimize GPU overhead
+    # deploy: {}
+    # device_requests:
+    #   - driver: nvidia
+    #     count: -1         # -1 or "all" means all GPUs; set a number to limit
+    #     capabilities: ["gpu"]
     networks:
       - ai-network
+    
     runtime: nvidia 
-    # GPU configuration - comment out if no NVIDIA GPU available
+    # # GPU configuration - comment out if no NVIDIA GPU available
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+        limits:
+          memory: 16G
     # deploy:
     #   resources:
     #     reservations:
     #       devices:
     #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    #           device_ids: ['1'] 
+    #           capabilities: [gpu, compute, utility]
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # Neo4j Graph Database
+  neo4j:
+    image: docker.arvancloud.ir/neo4j:5.15-community
+    container_name: ai-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # Web UI
+      - "7687:7687"  # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/Mohsen1105$
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j-data:/var/lib/neo4j/data
+      - neo4j-logs:/var/lib/neo4j/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "Mohsen1105$", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ai-network
 
   # n8n Workflow Automation
   n8n:
@@ -163,8 +206,16 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
+
+      # Neo4j connection variables (optional, for convenience)
+      - NEO4J_HOST=neo4j
+      - NEO4J_PORT=7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=your-password-here
     depends_on:
       postgres:
+        condition: service_healthy
+      neo4j:
         condition: service_healthy
     volumes:
       - n8n-data:/home/node/.n8n
@@ -179,7 +230,10 @@ volumes:
   ollama_models:
   n8n-data:
   postgres_storage:
+  neo4j-data:
+  neo4j-logs:
 
 networks:
   ai-network:
     driver: bridge
+

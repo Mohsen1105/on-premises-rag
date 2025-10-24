@@ -95,6 +95,36 @@ docker exec on-premises-rag-postgres-1 psql -U root -d n8n -c "SELECT extname, e
 # Check table structure
 docker exec on-premises-rag-postgres-1 psql -U root -d n8n -c "\d vectors.documents"
 
+
+docker exec -it on-premises-rag-postgres-1 bash
+psql -U root -d n8n
+
+
 # Verify environment variables in n8n
 docker exec ai-n8n env | grep SUPABASE
 ```
+
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'public.documents';
+
+SELECT table_schema, table_name, table_type
+FROM information_schema.tables
+WHERE table_name = 'documents';
+
+select count(*) from documents;
+
+DELETE FROM documents; 
+
+
+\d+ public.documents
+                                              Table "public.documents"
+  Column   |  Type  | Collation | Nullable |      Default      | Storage  | Compression | Stats target | Description 
+-----------+--------+-----------+----------+-------------------+----------+-------------+--------------+-------------
+ id        | uuid   |           | not null | gen_random_uuid() | plain    |             |              | 
+ text      | text   |           |          |                   | extended |             |              | 
+ metadata  | jsonb  |           |          |                   | extended |             |              | 
+ embedding | vector |           |          |                   | external |             |              | 
+ path      | text   |           |          |                   | extended |             |              | 
+Indexes:
+    "documents_pkey" PRIMARY KEY, btree (id)

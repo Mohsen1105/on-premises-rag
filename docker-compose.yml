@@ -28,7 +28,7 @@ services:
     volumes:
       - open-webui-data:/app/backend/data
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      # - OLLAMA_BASE_URL=http://ollama:11434
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
       - SCRF_TRUSTED_ORIGINS=http://localhost,http://ai-assistant.company.local
       - ENABLE_SIGNUP=true
@@ -36,9 +36,9 @@ services:
       - ENABLE_ADMIN_EXPORT=true
       - PDF_EXTRACT_IMAGES=true
       # Supabase Vector Store Configuration (for RAG features)
-      - SUPABASE_HOST=${SUPABASE_HOST}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      # - SUPABASE_HOST=${SUPABASE_HOST}
+      # - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
     restart: unless-stopped
     networks:
       - ai-network
@@ -53,16 +53,16 @@ services:
       - ./api:/app
       - shared-data:/app/data
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      # - OLLAMA_HOST=http://ollama:11434
       - CHROMA_HOST=chromadb
       - REDIS_HOST=redis
       - DATABASE_URL=${DATABASE_URL}
       - ORACLE_DSN=${ORACLE_DSN}
       # Supabase Vector Store Configuration
-      - SUPABASE_HOST=${SUPABASE_HOST}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
-      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      # - SUPABASE_HOST=${SUPABASE_HOST}
+      # - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
+      # - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
       # PostgreSQL Configuration
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -127,18 +127,18 @@ services:
       retries: 10
 
   # Ollama LLM Server
-  ollama:
-    image: ollama/ollama:0.11.1
-    container_name: ollama
-    restart: unless-stopped
-    volumes:
-      - ollama_models:/root/.ollama
-    ports:
-      - "11434:11434"
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-    networks:
-      - ai-network
+  # ollama:
+  #   image: ollama/ollama:0.11.1
+  #   container_name: ollama
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ollama_models:/root/.ollama
+  #   ports:
+  #     - "11434:11434"
+  #   environment:
+  #     - OLLAMA_HOST=0.0.0.0
+  #   networks:
+  #     - ai-network
     
   # n8n Workflow Automation
   n8n:
@@ -159,9 +159,9 @@ services:
       - WEBHOOK_URL=http://localhost:5678/
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Supabase Vector Store Configuration
-      - SUPABASE_HOST=${SUPABASE_HOST}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
+      # - SUPABASE_HOST=${SUPABASE_HOST}
+      # - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # - SUPABASE_EMBEDDING_BATCH_SIZE=${SUPABASE_EMBEDDING_BATCH_SIZE}
     depends_on:
       postgres:
         condition: service_healthy
@@ -172,7 +172,7 @@ services:
 
 volumes:
   open-webui-data:
-  chroma-data:
+  # chroma-data:
   redis-data:
   shared-data:
   ollama_models:

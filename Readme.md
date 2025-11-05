@@ -35,7 +35,7 @@ User : root
 pass : 123
 
 # download models inside the ollama
-docker exec ollama ollama pull gpt-oss:20b
-
+docker exec ai-ollama ollama pull gpt-oss:20b
+phi3
 c # Check if Ollama API is accessible and returns models
 curl -s http://localhost:11434/api/tags | jq .
